@@ -1,15 +1,30 @@
-const User = require('../models/userModel')
-const sendEmail = require('../utils/email')
+const User = require("../models/userModel");
+const sendEmail = require("../utils/email");
 
-exports.getUser = async(req , res)=>{
-    try{
-    const user = await User.find().populate('catalogues', 'name').sort({createdAt: -1});
-    res.status(200).json({success:true , message:"All users fetched successfully", data:user});
-    }catch(error){
-        console.error("error fetching the data " , error);
-        res.status(500).json({success:false , message:"failed to fetch users"});
-    }
+exports.getUser = async (req, res) => {
+  try {
+    const user = await User.find({ role: "user" },"full_name company email country isVerified catalogues")
+      .populate("catalogues", "name catalogue_full_path")
+      .sort({ createdAt: -1 });
 
+    // const formattedata = user.map((u) => ({
+    //   full_name: u.full_name,
+    //   company:u.
+    //   email: u.email,
+    //   country: u.country,
+    //   isVerified: u.isVerified,
+    //   catalogues: u.catalogues,
+    // }));
+
+    res.status(200).json({
+      success: true,
+      message: "All users fetched successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.error("error fetching the data ", error);
+    res.status(500).json({ success: false, message: "failed to fetch users" });
+  }
 };
 
 // exports.getVerifiedUser = async(req , res)=>{
@@ -36,7 +51,6 @@ exports.getUser = async(req , res)=>{
 
 // };
 
-
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,14 +62,14 @@ exports.updateStatus = async (req, res) => {
     if (!existingUser) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
     // only one updation allowed
-    if (existingUser.isVerified === true && status === "false") {
+    if (existingUser.isVerified === true) {
       return res.status(400).json({
         success: false,
-        message: "Verified users cannot be unverified"
+        message: "Verified users cannot be unverified",
       });
     }
 
@@ -67,15 +81,14 @@ exports.updateStatus = async (req, res) => {
     ).populate("catalogues", "name");
 
     // Generate password ONLY first time
-    if (!existingUser.isVerified && status === "true") {
-      const randomPassword = Math.random().toString(36).slice(-8);
+    const randomPassword = Math.random().toString(36).slice(-8);
 
-      user.user_name = user.email;
-      user.password = randomPassword;
-      await user.save();
+    user.user_name = user.email;
+    user.password = randomPassword;
+    await user.save();
 
-      const subject = "Your Account Has Been Verified";
-      const html = `
+    const subject = "Your Account Has Been Verified";
+    const html = `
         <h2>Hello, ${user.full_name}!</h2>
         <p>Your account has been verified successfully.</p>
         <p>You can now log in using the following credentials:</p>
@@ -88,22 +101,26 @@ exports.updateStatus = async (req, res) => {
         <p>The Team</p>
       `;
 
-      await sendEmail(user.email, subject, html);
-      console.log(` verification email sent to ${user.email}`);
-    }
+    await sendEmail(user.email, subject, html);
+    console.log(` verification email sent to ${user.email}`);
 
-    res.status(200).json({
+
+    const userObj = user.toObject();
+    delete userObj.password;
+    delete userObj.user_name;
+
+
+    return res.status(200).json({
       success: true,
-      message: status === "true" ? "User verified" : "User unverified",
-      data: user
+      message: "User verified",
+      data: userObj,
     });
-
   } catch (error) {
     console.error("Error updating verification status:", error);
     res.status(500).json({
       success: false,
       message: "Server error while updating verification status",
-      error: error.message
+      error: error.message,
     });
   }
 };

@@ -5,6 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/'); // Save inside 'uploads/catalogues'
+    // C:\Users\AMAN\Desktop\JAAPS_BACKEND\middleware\upload.js
+    // middleware\upload.js
   },
   filename: (req, file, cb) => {
     const uniqueId = uuidv4();
