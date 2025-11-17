@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema(
   { strict: "throw" }
 );
 
+
 productSchema.index({ jaaps_no: 1, oem_no: 1 }, { unique: true }); //combination of uniqueness
 
 module.exports =
