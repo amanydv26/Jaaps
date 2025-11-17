@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
     
     // Store for controller use
     req.fileUUID = finalName; // e.g. "2a0e0a4f-63f3-4d3e-99a0-9d1b28e4a3ad.pdf"
-    req.fileFullPath = `/uploads/${finalName}`; // full public path
+    req.fileFullPath = `${req.protocol}://${req.get('host')}/uploads/${finalName}`; // full public path
 
     cb(null, finalName);
   }

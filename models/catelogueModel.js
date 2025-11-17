@@ -12,6 +12,9 @@ const catalogueSchema = new mongoose.Schema({
     catalogue_full_path:{
         type:String,
         require:true
+    },
+    photo:{
+        type:String
     }
 },{timestamps:true});
 

@@ -3,18 +3,12 @@ const sendEmail = require("../utils/email");
 
 exports.getUser = async (req, res) => {
   try {
-    const user = await User.find({ role: "user" },"full_name company email country isVerified catalogues")
+    const user = await User.find(
+      { role: "user" },
+      "full_name company email country isVerified catalogues"
+    )
       .populate("catalogues", "name catalogue_full_path")
       .sort({ createdAt: -1 });
-
-    // const formattedata = user.map((u) => ({
-    //   full_name: u.full_name,
-    //   company:u.
-    //   email: u.email,
-    //   country: u.country,
-    //   isVerified: u.isVerified,
-    //   catalogues: u.catalogues,
-    // }));
 
     res.status(200).json({
       success: true,
@@ -78,7 +72,7 @@ exports.updateStatus = async (req, res) => {
       id,
       { isVerified: status },
       { new: true }
-    ).populate("catalogues", "name");
+    );
 
     // Generate password ONLY first time
     const randomPassword = Math.random().toString(36).slice(-8);
@@ -104,16 +98,19 @@ exports.updateStatus = async (req, res) => {
     await sendEmail(user.email, subject, html);
     console.log(` verification email sent to ${user.email}`);
 
+    // const userObj = user.toObject();
+    // delete userObj.password;
+    // delete userObj.user_name;
 
-    const userObj = user.toObject();
-    delete userObj.password;
-    delete userObj.user_name;
-
+    // Step 3 — re-fetch CLEAN version without password/user_name
+    const cleanUser = await User.findById(id)
+      .select("full_name company email country isVerified catalogues")
+      .populate("catalogues", "name catalogue_full_path");
 
     return res.status(200).json({
       success: true,
       message: "User verified",
-      data: userObj,
+      data: cleanUser,
     });
   } catch (error) {
     console.error("Error updating verification status:", error);

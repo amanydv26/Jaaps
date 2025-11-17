@@ -1,42 +1,56 @@
 const Product = require('../models/productModel');
+const Category = require('../models/categoryModel');
 const XLSX = require("xlsx");
 exports.uploadProduct = async (req, res) => {
   try {
     const data = req.body;
 
-    if (!data || !data.JAAPS_NO) {
+    if (!data || !data.jaaps_no || !data.category) {
       return res.status(400).json({
         success: false,
-        message: "JAAPS_NO is required"
+        message: "jaaps_no and category are required"
       });
     }
 
-    // Check if product exists using JAAPS_NO
-    let product = await Product.findOne({ JAAPS_NO: data.JAAPS_NO });
+    // Validate category
+    const category = await Category.findById(data.category);
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category ID"
+      });
+    }
+
+    // Check if product exists using jaaps_no
+    let product = await Product.findOne({ jaaps_no: data.jaaps_no });
 
     if (product) {
-      // Always append the values
-      if (data.OEM_NO) product.OEM_NO.push(data.OEM_NO);
+      // Append new values
+      if (data.oem_no) product.oem_no.push(data.oem_no);
       if (data.description) product.description.push(data.description);
       if (data.vehicle) product.vehicle.push(data.vehicle);
       if (data.group) product.group.push(data.group);
+
+      // Update category (replace previous)
+      product.category = data.category;
 
       await product.save();
 
       return res.status(200).json({
         success: true,
-        message: "New information added to existing product",
+        message: "Product updated with new information",
         data: product
       });
     }
 
-    // Create a new product if JAAPS_NO does not exist
+    // Create a new product if jaaps_no does not exist
     const newProduct = new Product({
-      JAAPS_NO: data.JAAPS_NO,
-      OEM_NO: [data.OEM_NO],
-      description: [data.description],
-      vehicle: [data.vehicle],
-      group: [data.group]
+      jaaps_no: data.jaaps_no,
+      oem_no: data.oem_no ? [data.oem_no] : [],
+      description: data.description ? [data.description] : [],
+      vehicle: data.vehicle ? [data.vehicle] : [],
+      group: data.group ? [data.group] : [],
+      category: data.category   // Store category ID
     });
 
     await newProduct.save();
@@ -59,16 +73,37 @@ exports.uploadProduct = async (req, res) => {
 
 
 
-
-
 exports.uploadBulkProducts = async (req, res) => {
   try {
+
+    const categoryName = req.body.category;
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
         message: "Please upload an Excel file"
       });
     }
+    
+    if (!categoryName) {
+      return res.status(400).json({ success: false, message: "Category is required" });
+    }
+
+
+
+    
+   
+    let category = await Category.findOne({ name: categoryName });
+
+    
+    if (!category) {
+      // category = await Category.create({ name: categoryName });
+      console.log("New category created:");
+      return res.status(400).json({message:"create category from admin"})
+    } else {
+      console.log("Existing category found:", category.name);
+    }
+    
 
     // Convert Excel buffer to JSON
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
@@ -82,51 +117,52 @@ exports.uploadBulkProducts = async (req, res) => {
     // Loop through each row in Excel
     for (const row of sheetData) {
       const {
-        JAAPS_NO,
-        OEM_NO,
+        jaaps_no,
+        oem_no,
         description,
         vehicle,
         group
       } = row;
 
-      // If JAAPS_NO is missing → log error & skip row
-      if (!JAAPS_NO) {
-        errors.push({ row, error: "JAAPS_NO missing" });
+      // If jaaps_no is missing → log error & skip row
+      if (!jaaps_no) {
+        errors.push({ row, error: "jaaps_no missing" });
         console.log(row);
         continue;
       }
        const exists = await Product.findOne({
-        JAAPS_NO: row.JAAPS_NO,
-        OEM_NO: row.OEM_NO
+        jaaps_no: row.jaaps_no,
+        oem_no: row.oem_no
       });
 
       if (exists) {
         skipped.push(row);
         continue;
       }
-      let product = await Product.findOne({ JAAPS_NO });
+      let product = await Product.findOne({ jaaps_no });
 
       if (product) {
-        if (OEM_NO) product.OEM_NO.push(OEM_NO);
+        if (oem_no) product.oem_no.push(oem_no);
         if (description) product.description.push(description);
         if (vehicle) product.vehicle.push(vehicle);
         if (group) product.group.push(group);
 
         await product.save();
 
-        results.push({ JAAPS_NO, status: "updated" });
+        results.push({ jaaps_no, status: "updated" });
       } else {
         const newProduct = new Product({
-          JAAPS_NO,
-          OEM_NO: [OEM_NO],
+          jaaps_no,
+          oem_no: [oem_no],
           description: [description],
           vehicle: [vehicle],
-          group: [group]
+          group: [group],
+          category: category._id
         });
 
         await newProduct.save();
 
-        results.push({ JAAPS_NO, status: "created" });
+        results.push({ jaaps_no, status: "created" });
       }
     }
 
@@ -141,6 +177,29 @@ exports.uploadBulkProducts = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to process bulk upload",
+      error: error.message
+    });
+  }
+};
+
+
+
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find()
+
+    res.status(200).json({
+      success: true,
+      message: "All products fetched successfully",
+      data: products
+    });
+
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch products",
       error: error.message
     });
   }
