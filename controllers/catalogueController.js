@@ -4,7 +4,7 @@ exports.getCatalogues = async (req, res) => {
   try {
     
     const catalogues = await Catalogue.find({}, { name: 1 }).sort({ createdAt: -1 });
-    
+    console.log("catalogues fetched successfully");
     res.status(200).json({
       success: true,
       message: "Catalogues fetched successfully",
@@ -33,7 +33,6 @@ exports.uploadCatalogue = async (req, res) => {
       catalogue_path: req.fileUUID,
       catalogue_full_path: req.fileFullPath
     });
-
     res.status(200).json({
       success: true,
       message: "Catalogue uploaded successfully",
