@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 exports.login = async (req, res) => {
   try {
     const { user_name, password } = req.body;
-
     // Check required fields
     if (!user_name || !password) {
       return res.status(400).json({
