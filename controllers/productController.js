@@ -173,12 +173,12 @@ exports.getAllProducts = async (req, res) => {
   try {
     const { search, page = 1 } = req.query;
 
-    const limit = 50;               // only 50 products per request
+    const limit = 50;
     const skip = (page - 1) * limit;
 
     let query = {};
 
-    // Search by exact JAAPS or OEM
+    // If search is present → apply exact search (NO pagination)
     if (search && search.trim() !== "") {
       query = {
         $or: [
@@ -186,12 +186,20 @@ exports.getAllProducts = async (req, res) => {
           { oem_no: search }
         ]
       };
+
+      const results = await Product.find(query).populate("category", "name");
+
+      return res.status(200).json({
+        success: true,
+        message: "Search results",
+        count: results.length,
+        data: results
+      });
     }
 
-    // Total count for pagination
+    // Otherwise → normal pagination
     const totalProducts = await Product.countDocuments(query);
 
-    // Fetch products with pagination
     const products = await Product.find(query)
       .populate("category", "name")
       .skip(skip)
@@ -205,7 +213,7 @@ exports.getAllProducts = async (req, res) => {
       totalProducts,
       totalPages: Math.ceil(totalProducts / limit),
       count: products.length,
-      data: products
+      data: products,
     });
 
   } catch (error) {
@@ -217,7 +225,6 @@ exports.getAllProducts = async (req, res) => {
     });
   }
 };
-
 
 exports.markFeatured = async (req, res) => {
   try {

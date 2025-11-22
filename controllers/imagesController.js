@@ -90,7 +90,11 @@ exports.uploadImagesFromFolder = async (req, res) => {
         image_url: imageURL,
       });
     }
-
+    console.log(` totalFilesReceived: ${files.length},
+      totalUploaded: ${uploaded.length},
+      totalSkipped:${skipped.length},
+      totalNotFound: ${notFound.length}`);
+      
     res.status(200).json({
       success: true,
       message: "Image upload process completed",
