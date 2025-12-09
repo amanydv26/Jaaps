@@ -15,7 +15,13 @@ const catalogueSchema = new mongoose.Schema({
     },
     photo:{
         type:String
-    }
+    },
+    category: 
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Category"   // Reference to Category model
+        }
+    
 },{timestamps:true});
 
 module.exports = mongoose.model('Catalogue' ,catalogueSchema );

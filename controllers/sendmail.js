@@ -30,7 +30,11 @@ exports.registerUser = async (req, res) => {
       company: data.company,
       email: data.email,
       country: data.country,
-      catalogues: data.catalogues // store catalogue IDs
+      catalogues: data.catalogues.map((id)=>{
+        return {
+          catalogueId:id
+        }
+      }) // store catalogue IDs
     });
     console.log(newUser);
     await newUser.save();

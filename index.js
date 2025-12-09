@@ -19,8 +19,8 @@ const Contact = require('./routes/contactRoute')
 const product = require('./routes/productRoute')
 const Imagesupload = require('./routes/imageRoute');
 const Login = require('./routes/loginRoute')
-
-
+const careerRoutes = require("./routes/careerRoute");
+const user = require("./routes/userRoute")
 
 
 app.use('/api/register', Register);
@@ -30,6 +30,9 @@ app.use('/api/contact' , Contact)
 app.use('/api/product', product);
 app.use('/api/images',Imagesupload);
 app.use('/api/auth' , Login);
+app.use("/api/career", careerRoutes);
+app.use("/api/user" , user);
+
 
 
 const PORT = process.env.PORT || 5001;

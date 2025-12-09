@@ -36,7 +36,7 @@ exports.login = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: user._id, user_name: user.user_name, role: user.role },
-      "yourSecretKey",     // keep inside quotes as you prefer
+      "1222",     // 
       { expiresIn: "7d" }
     );
 
@@ -65,3 +65,40 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+exports.getUserDashboard = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId)
+      .select("full_name email user_name catalogues")
+      .populate("catalogues"); // populate catalogue details
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // prepare catalogue data safely
+    const catalogues = (user.catalogues || []).map((cat) => ({
+      _id: cat._id,
+      name: cat.name,
+      catalogue_path: cat.catalogue_path,
+      photo: cat.photo || "",
+      accessedOn: cat.createdAt?.toISOString()?.split("T")[0] || "", // optional
+    }));
+
+    res.json({
+      user: {
+        name: user.full_name,
+        email: user.email,
+        avatar: "/default-avatar.png",
+      },
+      catalogues,
+    });
+
+  } catch (error) {
+    console.error("Dashboard Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

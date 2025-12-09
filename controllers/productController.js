@@ -274,3 +274,29 @@ exports.markFeatured = async (req, res) => {
     });
   }
 };
+
+
+exports.getFeaturedProducts = async (req, res) => {
+  try {
+    // read limit from query, default = 10
+    const limit = parseInt(req.query.limit, 10) || 10;
+
+    const featuredProducts = await Product.find({ isFeatured: true })
+      .populate("category", "name")
+      .limit(limit);
+
+    return res.status(200).json({
+      success: true,
+      message: "Featured products fetched successfully",
+      count: featuredProducts.length,
+      data: featuredProducts,
+    });
+  } catch (error) {
+    console.error("Error fetching featured products:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch featured products",
+      error: error.message,
+    });
+  }
+};

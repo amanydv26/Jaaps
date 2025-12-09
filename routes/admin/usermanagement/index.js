@@ -4,7 +4,12 @@ const {
   getUser, 
   getVerifiedUser, 
   getNotVerifiedUser, 
-  updateStatus 
+  updateStatus ,
+  adminCreateCredentials,
+  deactivateUser,
+  deleteUser,
+  updateUserCataloguePermissions 
+
 } = require('../../../controllers/adminController');
 
 // router.get('/list', (req, res) => {
@@ -15,5 +20,8 @@ router.get('/', getUser);
 //router.get('/verified', getVerifiedUser);
 //router.get('/notverified', getNotVerifiedUser);
 router.patch('/:id', updateStatus);
-
+router.patch('/credentials/:userId',adminCreateCredentials)
+router.patch("/deactivate/:userId", deactivateUser);
+router.delete("/delete/:userId", deleteUser);
+router.patch("/catalogue-permissions/:userId", updateUserCataloguePermissions);
 module.exports = router;
