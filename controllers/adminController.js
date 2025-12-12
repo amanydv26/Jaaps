@@ -84,7 +84,7 @@ exports.updateStatus = async (req, res) => {
     // Generate password ONLY first time
     const randomPassword = Math.random().toString(36).slice(-8);
 
-    user.user_name = user.email;
+    user.user_name = user.user_name;
     user.password = randomPassword;
     await user.save();
 

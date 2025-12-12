@@ -7,7 +7,18 @@ const mongoose= require('mongoose')
 app.use(express.json());
 dotenv.config();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? [
+      'http://localhost:3000',
+      'https://jaaps.vercel.app',
+    ]
+    : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  credentials: true
+}));
+
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
