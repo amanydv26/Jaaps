@@ -28,8 +28,8 @@ exports.uploadCatalogue = async (req, res) => {
   try {
     const { name, category } = req.body;  
     // category = "Engine" (string)
-
-    if (!name || !req.file) {
+console.log(name)
+    if (!name ) {
       return res.status(400).json({
         success: false,
         message: "Name and file are required",
@@ -78,32 +78,71 @@ exports.uploadCatalogue = async (req, res) => {
 };
 
 
+// exports.getGroupedCatalogues = async (req, res) => {
+//   try {
+//     console.log("hitted api")
+//     // 1. Fetch all categories
+//     const categories = await Category.find();
+
+//     // 2. For each category, fetch its catalogues
+//     const groupedData = await Promise.all(
+//       categories.map(async (cat) => {
+//         const catCatalogues = await Catalogue.find({ category: cat._id })
+//           .select("_id name catalogue_full_path");
+
+//         return {
+//           _id: cat._id,
+//           name: cat.name,
+//           catalogues: catCatalogues
+//         };
+//       })
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       data: groupedData,
+//     });
+//   } catch (error) {
+//     console.error("Failed to fetch grouped catalogues:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error",
+//     });
+//   }
+// };
 exports.getGroupedCatalogues = async (req, res) => {
   try {
-    // 1. Fetch all categories
-    const categories = await Category.find();
+    console.log("🔥 getGroupedCatalogues API hit");
 
-    // 2. For each category, fetch its catalogues
-    const groupedData = await Promise.all(
-      categories.map(async (cat) => {
-        const catCatalogues = await Catalogue.find({ category: cat._id })
-          .select("_id name catalogue_full_path");
+    const groupedData = await Category.aggregate([
+      {
+        $lookup: {
+          from: "catalogues",   // ⚠️ MUST match MongoDB collection name
+          localField: "_id",
+          foreignField: "category",
+          as: "catalogues",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          catalogues: {
+            _id: 1,
+            name: 1,
+            catalogue_full_path: 1,
+          },
+        },
+      },
+    ]);
 
-        return {
-          _id: cat._id,
-          name: cat.name,
-          catalogues: catCatalogues
-        };
-      })
-    );
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: groupedData,
     });
   } catch (error) {
     console.error("Failed to fetch grouped catalogues:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
     });

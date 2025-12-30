@@ -2,7 +2,9 @@ const User = require("../models/userModel");
 
 exports.getUserDashboard = async (req, res) => {
   try {
+    console.log("done")
     const userId = req.params.userId; 
+    console.log(userId)
     const user = await User.findById(userId)
       .select("full_name email user_name catalogues")
       .populate("catalogues.catalogueId");
