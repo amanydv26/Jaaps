@@ -12,7 +12,7 @@ app.use(cors({
     ? [
       'http://localhost:3000',
       'https://jaaps.vercel.app',
-      'https://jaaps.in',
+      'https://www.jaaps.in',
     ]
     : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
