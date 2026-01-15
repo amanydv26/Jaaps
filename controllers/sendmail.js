@@ -23,6 +23,7 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: "Some catalogues are invalid." });
       console.log("invalid catalogues");
     }
+    const catalogueNames = validCatalogues.map(cat => cat.name).join(', ');
 
     // Create new user
     const newUser = new User({
@@ -49,7 +50,7 @@ exports.registerUser = async (req, res) => {
       <p><b>Company:</b> ${data.company}</p>
       <p><b>Email:</b> ${data.email}</p>
       <p><b>Country:</b> ${data.country}</p>
-      <p><b>Catalogue IDs:</b> ${data.catalogues.join(', ')}</p>
+      <p><b>Catalogues Selected:</b> ${catalogueNames}</p>
       <br/>
       <p>Check your dashboard for more info.</p>
       `
@@ -66,7 +67,8 @@ exports.registerUser = async (req, res) => {
       <ul>
         <li><b>Company:</b> ${data.company}</li>
         <li><b>Country:</b> ${data.country}</li>
-        <li><b>Catalogue IDs:</b> ${data.catalogues.join(', ')}</li>
+        <li><b>Catalogues Selected:</b> ${catalogueNames}</li>
+
       </ul>
       <br/>
       <p>We'll contact you shortly.</p>
