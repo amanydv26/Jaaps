@@ -25,10 +25,10 @@ exports.sendOtp = async (req, res) => {
       </div>
     `;
 
-    await sendEmail(email, "Your OTP Code", html, true);
+    const response  = await sendEmail(email, "Your OTP Code", html, true);
 
     res.json({ success: true });
-    console.log("sent otp");
+    console.log("sent otp to" , response);
   } catch (err) {
     console.error("Send OTP Error:", err);
     res.status(500).json({ success: false });

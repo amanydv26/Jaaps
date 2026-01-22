@@ -1,31 +1,54 @@
-const Brevo = require('@getbrevo/brevo');
-require('dotenv').config();
+require("dotenv").config();
+const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 
-// Initialize Brevo Transactional Email client
-const apiInstance = new Brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
-
+const ses = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 const sendEmail = async (to, subject, content, isHtml = true) => {
   try {
-   
-    const recipients = Array.isArray(to) ? to.map(email => ({ email })) : [{ email: to }];
+    const recipients = Array.isArray(to) ? to : [to];
 
-    
-    const emailData = {
-      sender: { name: 'JAAPS', email: process.env.SENDER_EMAIL },
-      to: recipients,
-      subject,
-      // if HTML → use htmlContent, else use textContent
-      ...(isHtml ? { htmlContent: content } : { textContent: content })
+    const params = {
+      Source: `"JAAPS" <${process.env.SENDER_EMAIL}>`,
+      Destination: {
+        ToAddresses: recipients,
+      },
+      Message: {
+        Subject: {
+          Data: subject,
+          Charset: "UTF-8",
+        },
+        Body: {
+          ...(isHtml
+            ? {
+                Html: {
+                  Data: content,
+                  Charset: "UTF-8",
+                },
+              }
+            : {
+                Text: {
+                  Data: content,
+                  Charset: "UTF-8",
+                },
+              }),
+        },
+      },
     };
 
-   
-    const response = await apiInstance.sendTransacEmail(emailData);
-    console.log(` Email sent to: ${recipients.map(r => r.email).join(', ')}`);
+    const command = new SendEmailCommand(params);
+    const response = await ses.send(command);
+
+    console.log("checking", response);
     return response;
-  } catch (error) {
-    console.error(' Email send error:', error.response?.body || error.message);
+  } catch (err) {
+    console.error("AWS SES error:", err.message);
+    throw err;
   }
 };
 

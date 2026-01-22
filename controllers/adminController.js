@@ -176,7 +176,8 @@ exports.adminCreateCredentials = async (req, res) => {
         <p>Your account has been verified successfully.</p>
         <p>You can now log in using the following credentials:</p>
         <ul>
-          <li><b>Username:</b> ${user.email}</li>
+          <li><b>Username:</b> ${user.
+user_name}</li>
           <li><b>Password:</b> ${password}</li>
         </ul>
         <p></p>
@@ -321,3 +322,5 @@ exports.updateUserCataloguePermissions = async (req, res) => {
     });
   }
 };
+
+

@@ -1,5 +1,6 @@
 const Catalogue = require('../models/catelogueModel');
 const Category = require("../models/categoryModel");
+const cloudinary = require("../config/cloudinary")
 exports.getCatalogues = async (req, res) => {
   try {
     
@@ -24,41 +25,58 @@ exports.getCatalogues = async (req, res) => {
 
 
 
+
 exports.uploadCatalogue = async (req, res) => {
   try {
-    const { name, category } = req.body;  
-    // category = "Engine" (string)
-console.log(name)
-    if (!name ) {
+    const { name, category } = req.body;
+    console.log("file", req.file);
+    
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Name and file are required",
+        message: "PDF file is required",
       });
     }
 
-    if (!category || typeof category !== "string") {
-      return res.status(400).json({
-        success: false,
-        message: "Category name is required",
-      });
-    }
-
-    // 🔍 FIND CATEGORY BY NAME
     const categoryDoc = await Category.findOne({ name: category });
-
     if (!categoryDoc) {
       return res.status(400).json({
         success: false,
-        message: `Category '${category}' not found`,
+        message: "Category not found",
       });
     }
 
-    // CREATE NEW CATALOGUE
+    const baseName = req.file.originalname
+      .replace(/\.pdf$/i, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_"); // sanitize filename
+
+ const uploadResult = await new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    {
+      resource_type: "raw",
+      folder: "Catalogue_pdf",
+      type: "upload",
+      public_id: `${Date.now()}_${baseName}`,
+      format: "pdf",
+    },
+    (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    }
+  );
+
+  stream.end(req.file.buffer);
+});
+
+
+    console.log("Upload result:", uploadResult); // ✅ Debug log
+
+    // SAVE TO DB
     const newCatalogue = await Catalogue.create({
       name,
-      catalogue_path: req.fileUUID,
-      catalogue_full_path: req.fileFullPath,
-      category: categoryDoc._id, // single category id
+      category: categoryDoc._id,
+      catalogue_path: uploadResult.public_id,
+      catalogue_full_path: uploadResult.secure_url,
     });
 
     res.status(200).json({
@@ -68,15 +86,13 @@ console.log(name)
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Catalogue upload error:", error);
     res.status(500).json({
       success: false,
-      message: "File upload failed",
-      error,
+      message: error.message || "Failed to upload catalogue",
     });
   }
 };
-
 
 // exports.getGroupedCatalogues = async (req, res) => {
 //   try {
@@ -145,6 +161,110 @@ exports.getGroupedCatalogues = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+};
+
+
+exports.getGroupeddashboard = async (req, res) => {
+  try {
+    console.log(" getGroupedCatalogues API hit");
+
+    const groupedData = await Category.aggregate([
+      {
+        $lookup: {
+          from: "catalogues", // must match MongoDB collection name
+          localField: "_id",
+          foreignField: "category",
+          as: "catalogues",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          categoryName: "$name",
+          catalogues: {
+            $map: {
+              input: "$catalogues",
+              as: "cat",
+              in: {
+                _id: "$$cat._id",
+                name: {
+                  $concat: [
+                    "$name",
+                    " : ",
+                    "$$cat.name",
+                  ],
+                },
+                catalogue_full_path: "$$cat.catalogue_full_path",
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: groupedData,
+    });
+  } catch (error) {
+    console.error("Failed to fetch grouped catalogues:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+exports.deleteCatalogues = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    // ✅ Validate
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one catalogue ID is required",
+      });
+    }
+
+    // 🔍 Fetch catalogues to clean cloudinary
+    const catalogues = await Catalogue.find({
+      _id: { $in: ids },
+    });
+
+    if (catalogues.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No catalogues found",
+      });
+    }
+
+    // 🧹 Delete files from Cloudinary
+    for (const cat of catalogues) {
+      if (cat.catalogue_path) {
+        await cloudinary.uploader.destroy(cat.catalogue_path, {
+          resource_type: "raw",
+        });
+      }
+    }
+
+    // 🗑 Delete from DB
+    await Catalogue.deleteMany({
+      _id: { $in: ids },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Deleted ${catalogues.length} catalogue(s) successfully`,
+    });
+  } catch (error) {
+    console.error("Delete catalogues error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete catalogues",
     });
   }
 };

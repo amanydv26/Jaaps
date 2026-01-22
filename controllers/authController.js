@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 exports.login = async (req, res) => {
   try {
     const { user_name, password } = req.body;
-    // Check required fields
+    console.log("checking user" , user_name  )
     if (!user_name || !password) {
       return res.status(400).json({
         success: false,
@@ -13,7 +13,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find user by username
     const user = await User.findOne({ user_name });
 
     if (!user) {
@@ -23,28 +22,44 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Compare password with hashed password
+    // 🔒 BLOCK ADMINS FROM USER LOGIN
+    if (user.role !== "user") {
+      return res.status(403).json({
+        success: false,
+        message: "Please login via admin portal",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: "Invalid password",
       });
     }
 
-    // Generate JWT
-    const token = jwt.sign(
-      { id: user._id, user_name: user.user_name, role: user.role },
-      "1222",     // 
-      { expiresIn: "7d" }
-    );
+   const token = jwt.sign(
+  {
+    userId: user._id.toString(),
+    role: user.role,
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
 
-    // Success response
-    res.status(200).json({
+    // ✅ USER TOKEN (separate from admin)
+    res.cookie("user_token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false, // true in production
+      path: "/",   
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
       success: true,
       message: "Login successful",
-      token,
       user: {
         id: user._id,
         full_name: user.full_name,
@@ -53,18 +68,18 @@ exports.login = async (req, res) => {
         email: user.email,
         company: user.company,
         country: user.country,
-      }
+      },
     });
 
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Login failed",
-      error: error.message
     });
   }
 };
+
 
 exports.getUserDashboard = async (req, res) => {
   try {

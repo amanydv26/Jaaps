@@ -1,9 +1,11 @@
 const Product = require("../models/productModel");
 const Category = require("../models/categoryModel");
 const XLSX = require("xlsx");
+
 exports.uploadProduct = async (req, res) => {
   try {
     const data = req.body;
+    console.log(data);
 
     if (!data || !data.jaaps_no || !data.category) {
       return res.status(400).json({
@@ -12,7 +14,6 @@ exports.uploadProduct = async (req, res) => {
       });
     }
 
-    // Find category using NAME instead of ID
     const category = await Category.findOne({ name: data.category });
 
     if (!category) {
@@ -22,17 +23,32 @@ exports.uploadProduct = async (req, res) => {
       });
     }
 
-    // Check if product exists using jaaps_no
+    // normalize to arrays
+    const oemNos = Array.isArray(data.oem_no)
+      ? data.oem_no
+      : data.oem_no
+      ? [data.oem_no]
+      : [];
+
+    const descriptions = Array.isArray(data.description)
+      ? data.description
+      : data.description
+      ? [data.description]
+      : [];
+
+    const vehicles = Array.isArray(data.vehicle)
+      ? data.vehicle
+      : data.vehicle
+      ? [data.vehicle]
+      : [];
+
     let product = await Product.findOne({ jaaps_no: data.jaaps_no });
 
     if (product) {
-      // Append new values
-      if (data.oem_no) product.oem_no.push(data.oem_no);
-      if (data.description) product.description.push(data.description);
-      if (data.vehicle) product.vehicle.push(data.vehicle);
-      // if (data.group) product.group.push(data.group);
+      if (oemNos.length) product.oem_no.push(...oemNos);
+      if (descriptions.length) product.description.push(...descriptions);
+      if (vehicles.length) product.vehicle.push(...vehicles);
 
-      // Update category (replace previous)
       product.category = category._id;
 
       await product.save();
@@ -44,32 +60,101 @@ exports.uploadProduct = async (req, res) => {
       });
     }
 
-    // Create a new product if jaaps_no does not exist
     const newProduct = new Product({
       jaaps_no: data.jaaps_no,
-      oem_no: data.oem_no ? [data.oem_no] : [],
-      description: data.description ? [data.description] : [],
-      vehicle: data.vehicle ? [data.vehicle] : [],
-      // group: data.group ? [data.group] : [],
-      category: category._id, // Store category ID
+      oem_no: oemNos,
+      description: descriptions,
+      vehicle: vehicles,
+      category: category._id,
     });
 
     await newProduct.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "New product created",
       data: newProduct,
     });
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to save product",
       error: error.message,
     });
   }
 };
+
+// exports.uploadProduct = async (req, res) => {
+//   try {
+//     const data = req.body;
+//     console.log(data);
+
+//     if (!data || !data.jaaps_no || !data.category) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "jaaps_no and category are required",
+//       });
+//     }
+
+//     // Find category using NAME instead of ID
+//     const category = await Category.findOne({ name: data.category });
+
+//     if (!category) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid category name. Please create the category first.",
+//       });
+//     }
+
+//     // Check if product exists using jaaps_no
+//     let product = await Product.findOne({ jaaps_no: data.jaaps_no });
+
+//     if (product) {
+//       // Append new values
+//       if (data.oem_no) product.oem_no.push(data.oem_no);
+//       if (data.description) product.description.push(data.description);
+//       if (data.vehicle) product.vehicle.push(data.vehicle);
+//       // if (data.group) product.group.push(data.group);
+
+//       // Update category (replace previous)
+//       product.category = category._id;
+
+//       await product.save();
+
+//       return res.status(200).json({
+//         success: true,
+//         message: "Product updated with new information",
+//         data: product,
+//       });
+//     }
+
+//     // Create a new product if jaaps_no does not exist
+//     const newProduct = new Product({
+//       jaaps_no: data.jaaps_no,
+//       oem_no: data.oem_no ? [data.oem_no] : [],
+//       description: data.description ? [data.description] : [],
+//       vehicle: data.vehicle ? [data.vehicle] : [],
+//       // group: data.group ? [data.group] : [],
+//       category: category._id, // Store category ID
+//     });
+
+//     await newProduct.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: "New product created",
+//       data: newProduct,
+//     });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to save product",
+//       error: error.message,
+//     });
+//   }
+// };
 
 exports.uploadBulkProducts = async (req, res) => {
   try {
@@ -297,6 +382,44 @@ exports.getFeaturedProducts = async (req, res) => {
       success: false,
       message: "Failed to fetch featured products",
       error: error.message,
+    });
+  }
+};
+
+
+
+// -----------------------------
+// BULK DELETE PRODUCTS
+// -----------------------------
+exports.bulkDeleteProducts = async (req, res) => {
+  
+  console.log("DELETE HITTED");
+  try {
+    const { ids } = req.body;
+
+    // Validation
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product IDs are required for deletion",
+      });
+    }
+
+    // Delete products
+    const result = await Product.deleteMany({
+      _id: { $in: ids },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Products deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Bulk delete error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
   }
 };
