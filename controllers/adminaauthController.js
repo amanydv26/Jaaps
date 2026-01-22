@@ -38,7 +38,7 @@ exports.adminLogin = async (req, res) => {
 
     res.cookie("admin_token", token, {
       httpOnly: true,
-      sameSite: "lax",
+      sameSite: "none",
       secure: true, // true in production (HTTPS)
       path: "/account/admin", //  ADMIN ONLY
       maxAge: 3 * 24 * 60 * 60 * 1000,
