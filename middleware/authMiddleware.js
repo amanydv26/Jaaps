@@ -2,18 +2,20 @@ const jwt = require("jsonwebtoken");
 
 exports.authMiddleware = (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
         message: "Access denied. Token missing",
       });
     }
 
-    const decoded = jwt.verify(token, "yourSecretKey");
+    const token = authHeader.split(" ")[1];
 
-    req.user = decoded; // contains id, user_name, role
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = decoded; // { id, role }
     next();
 
   } catch (error) {

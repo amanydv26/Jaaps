@@ -1,11 +1,14 @@
-const User = require("../models/userModel");
+const User = require('../models/userModel')
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 exports.adminLogin = async (req, res) => {
   try {
+    console.log("✅ adminLogin CONTROLLER HIT");
+
     const { user_name, password } = req.body;
 
+    console.log(user_name , password)
     if (!user_name || !password) {
       return res.status(400).json({
         success: false,
@@ -15,42 +18,36 @@ exports.adminLogin = async (req, res) => {
 
     const user = await User.findOne({ user_name });
 
+    console.log("USER FOUND:", user ? true : false);
+    console.log("USER ROLE:", user?.role);
     if (!user || user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Admins only",
       });
     }
-
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
+    console.log("PASSWORD MATCH:", isMatch);
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "3d" } //  shorter expiry for admin
-    );
+if (!isMatch) {
+  return res.status(401).json({ message: "Invalid credentials" });
+}
 
-    res.cookie("admin_token", token, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true, // true in production (HTTPS)
-      path: "/account/admin", //  ADMIN ONLY
-      maxAge: 3 * 24 * 60 * 60 * 1000,
-    });
+const token = jwt.sign(
+  { id: user._id, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: "3d" }
+);
 
-    return res.status(200).json({
-      success: true,
-      message: "Admin login successful",
-    });
+console.log("JWT GENERATED");
+
+return res.status(200).json({
+  success: true,
+  token,
+});
 
   } catch (error) {
-    console.error("Admin Login Error:", error);
+ 
     return res.status(500).json({
       success: false,
       message: "Login failed",
