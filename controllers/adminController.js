@@ -193,10 +193,15 @@ user_name}</li>
       data: user,
     });
 
-  } catch (error) {
-    console.log("Error updating:", error);
-    res.status(500).json({ message: "Server error" });
-  }
+ } catch (error) {
+  console.error("Error updating user:", error);
+
+  return res.status(500).json({
+    success: false,
+    message: error.message || "Internal Server Error",
+    error: process.env.NODE_ENV === "development" ? error : undefined,
+  });
+}
 };
 
 
@@ -323,4 +328,63 @@ exports.updateUserCataloguePermissions = async (req, res) => {
   }
 };
 
+exports.adminUpdatePasswordOnly = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { password } = req.body;
 
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Update password (pre-save hook hashes it)
+    user.password = password;
+    await user.save();
+
+    let emailSent = false;
+
+    const subject = "Your Password Has Been Updated";
+    const html = `
+      <h2>Hello ${user.full_name},</h2>
+      <p>Your account password has been updated successfully.</p>
+      <p><b>New Password:</b> ${password}</p>
+      <p>If you did not request this change, please contact support immediately.</p>
+      <br/>
+      <p>— Team</p>
+    `;
+
+    try {
+      await sendEmail(user.email, subject, html);
+      emailSent = true;
+      console.log("✅ Email sent");
+    } catch (mailError) {
+      console.error("❌ Email failed:", mailError.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      emailSent, // 🔥 THIS IS THE KEY
+    });
+
+  } catch (error) {
+    console.error("Error updating password:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal Server Error",
+    });
+  }
+};

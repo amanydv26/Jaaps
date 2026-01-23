@@ -8,8 +8,8 @@ const {
   adminCreateCredentials,
   deactivateUser,
   deleteUser,
-  updateUserCataloguePermissions 
-
+  updateUserCataloguePermissions ,
+  adminUpdatePasswordOnly
 } = require('../../../controllers/adminController');
 
 // router.get('/list', (req, res) => {
@@ -24,4 +24,5 @@ router.patch('/credentials/:userId',adminCreateCredentials)
 router.patch("/deactivate/:userId", deactivateUser);
 router.delete("/delete/:userId", deleteUser);
 router.patch("/catalogue-permissions/:userId", updateUserCataloguePermissions);
+router.patch("/update/:userId" , adminUpdatePasswordOnly)
 module.exports = router;
