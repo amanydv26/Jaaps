@@ -35,12 +35,81 @@ exports.getJobById = async (req, res) => {
 };
 
 // POST create a job
+
+
 exports.createJob = async (req, res) => {
+
+  console.log("hottong api for career")
   try {
-    const job = new Job(req.body);
-    await job.save();
-    res.status(201).json({ message: "Job created", job });
+    const {
+      title,
+      location,
+      jobType,
+      experience,
+      postedOn,
+      workingHours,
+      workingDays,
+      vacancies,
+      description,
+      aboutRole,
+      responsibilities,
+      requirements,
+      keySkills,
+      offer,
+      tags,
+      package: jobPackage,
+    } = req.body;
+
+    // basic validation
+    // if (
+    //   !title ||
+    //   !location ||
+    //   !jobType ||
+    //   !experience ||
+    //   !postedOn ||
+    //   !workingHours ||
+    //   !workingDays ||
+    //   !vacancies ||
+    //   !description ||
+    //   !aboutRole
+    // ) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "All required fields must be filled",
+    //   });
+    // }
+
+    const job = await Job.create({
+      title,
+      location,
+      jobType,
+      experience,
+      postedOn,
+      workingHours,
+      workingDays,
+      vacancies,
+      description,
+      aboutRole,
+      responsibilities,
+      requirements,
+      keySkills,
+      offer,
+      tags,
+      package: jobPackage,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Job created successfully",
+      data: job,
+    });
   } catch (error) {
-    res.status(400).json({ message: "Invalid data", error });
+    console.error("Create Job Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create job",
+      error: error.message,
+    });
   }
 };
+
