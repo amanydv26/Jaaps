@@ -54,10 +54,22 @@ exports.addUserCataloguesFromToken = async (req, res) => {
     console.log("📦 Body:", req.body);
     console.log("👤 User from token:", req.user);
 
-    const userId = req.user.id;
+    const userId = req.user.userId; // ✅ FIXED
     const { enable = [], expiryDate } = req.body;
 
     const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!Array.isArray(user.catalogues)) {
+      user.catalogues = [];
+    }
+
     console.log("📄 User before update:", user.catalogues);
 
     enable.forEach((catId) => {
@@ -71,7 +83,7 @@ exports.addUserCataloguesFromToken = async (req, res) => {
       } else {
         user.catalogues.push({
           catalogueId: catId,
-          allowed: false,
+          allowed: true, // 🔒 makes sense here
           expiryDate: expiryDate || null,
         });
       }
@@ -81,15 +93,16 @@ exports.addUserCataloguesFromToken = async (req, res) => {
 
     console.log("✅ User after update:", user.catalogues);
 
-    res.json({
+    return res.json({
       success: true,
       message: "Catalogues updated",
     });
   } catch (err) {
     console.error("❌ Catalogue update error:", err);
-    res.status(500).json({ success: false });
+    return res.status(500).json({ success: false });
   }
 };
+
 
 
 // exports.addUserCataloguesFromToken = async (req, res) => {
