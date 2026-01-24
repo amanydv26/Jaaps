@@ -83,7 +83,7 @@ exports.addUserCataloguesFromToken = async (req, res) => {
       } else {
         user.catalogues.push({
           catalogueId: catId,
-          allowed: true, // 🔒 makes sense here
+          allowed: false,
           expiryDate: expiryDate || null,
         });
       }
