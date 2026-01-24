@@ -5,7 +5,9 @@ const jwt = require("jsonwebtoken");
 exports.login = async (req, res) => {
   try {
     const { user_name, password } = req.body;
-    console.log("checking user" , user_name  )
+
+    console.log("checking user", user_name);
+
     if (!user_name || !password) {
       return res.status(400).json({
         success: false,
@@ -14,7 +16,7 @@ exports.login = async (req, res) => {
     }
 
     const user = await User.findOne({ user_name });
-
+    console.log(user)
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -22,7 +24,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    // 🔒 BLOCK ADMINS FROM USER LOGIN
+    // 🔒 Block admins from user login
     if (user.role !== "user") {
       return res.status(403).json({
         success: false,
@@ -39,27 +41,21 @@ exports.login = async (req, res) => {
       });
     }
 
-   const token = jwt.sign(
-  {
-    userId: user._id.toString(),
-    role: user.role,
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: "7d" }
-);
+    // ✅ Generate JWT
+    const token = jwt.sign(
+      {
+        userId: user._id.toString(),
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    // ✅ USER TOKEN (separate from admin)
-    res.cookie("user_token", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: true, // true in production
-      path: "/",   
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+    // ✅ Send token in response (NOT cookie)
     return res.status(200).json({
       success: true,
       message: "Login successful",
+      token, // <-- frontend will store this in localStorage
       user: {
         id: user._id,
         full_name: user.full_name,
@@ -79,7 +75,6 @@ exports.login = async (req, res) => {
     });
   }
 };
-
 
 exports.getUserDashboard = async (req, res) => {
   try {
