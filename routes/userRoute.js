@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUserDashboard , addUserCataloguesFromToken} = require('../controllers/userController');
+const { getUserDashboard , addUserCataloguesFromToken,activateUser} = require('../controllers/userController');
 const router = express.Router();
 const authUser = require("../middleware/authuser");
 
@@ -13,6 +13,6 @@ router.put("/catalogues", authUser, addUserCataloguesFromToken);
 
 router.get("/dashboard/:userId", getUserDashboard);
 
-
+router.patch("/activate/:id", activateUser);
 
 module.exports = router;
