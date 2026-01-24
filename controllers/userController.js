@@ -1,7 +1,10 @@
 const User = require("../models/userModel");
 const authUser = require("../middleware/authuser");
+
 exports.getUserDashboard = async (req, res) => {
   try {
+    console.log("api hitting");
+
     const userId = req.params.userId;
 
     const user = await User.findById(userId)
@@ -15,14 +18,20 @@ exports.getUserDashboard = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ ONLY allowed catalogues
+    // ✅ FIXED EXPIRY LOGIC (CHANGE IS HERE)
     const catalogues = (user.catalogues || [])
-      .filter(
-        (cat) =>
-          cat.allowed === true && // 🔐 permission check
-          cat.catalogueId && // safety
-          (!cat.expiryDate || new Date(cat.expiryDate) > new Date()) // optional expiry check
-      )
+      .filter((cat) => {
+        if (!cat.allowed || !cat.catalogueId) return false;
+
+        // if no expiry date → always valid
+        if (!cat.expiryDate) return true;
+
+        // allow full expiry day (till 11:59 PM)
+        const expiry = new Date(cat.expiryDate);
+        expiry.setHours(23, 59, 59, 999);
+
+        return expiry >= new Date();
+      })
       .map((cat) => ({
         _id: cat.catalogueId._id,
         name: cat.catalogueId.name,
@@ -46,7 +55,6 @@ exports.getUserDashboard = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 exports.addUserCataloguesFromToken = async (req, res) => {
