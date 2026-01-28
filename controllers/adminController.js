@@ -168,9 +168,10 @@ exports.adminCreateCredentials = async (req, res) => {
 
     //mail
     user.isVerified = true;
-
+    
     await user.save();
      const subject = "Your Account Has Been Verified and catalogues access has been provided";
+     const dashboardUrl = `https://www.jaaps.in/account/user/${user._id}`;
     const html = `
         <h2>Hello, ${user.full_name}!</h2>
         <p>Your account has been verified successfully.</p>
@@ -180,7 +181,10 @@ exports.adminCreateCredentials = async (req, res) => {
 user_name}</li>
           <li><b>Password:</b> ${password}</li>
         </ul>
-        <p></p>
+        <p> <b>Dashboard Access:</b><br/>
+    <a href="${dashboardUrl}" target="_blank">
+      Go to your dashboard
+    </a></p>
         <br/>
         <p>The Team</p>
       `;

@@ -46,7 +46,7 @@ const user = require("./routes/userRoute")
 const otpRoute = require('./routes/otpRoutes')
 const dashboard = require('./routes/dashboardRoute')
 const category = require('./routes/catagoryRoute')
-
+const exhibition = require('./routes/exhibitionRoute')
 
 app.use((req, res, next) => {
   console.log("➡️ Incoming:", req.method, req.url);
@@ -67,6 +67,7 @@ app.use("/api/user" , user);
 app.use("/api/otp",otpRoute);
 app.use("/api/dashboard",dashboard)
 app.use("/api/category",category);
+app.use("/api/exhibition",exhibition);
 
 const PORT = process.env.PORT || 5001;
 mongoose.connect(process.env.MONGO_URI)

@@ -142,3 +142,77 @@ exports.deleteJob = async (req, res) => {
     });
   }
 };
+
+// UPDATE job by ID
+exports.updateJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      title,
+      location,
+      jobType,
+      experience,
+      postedOn,
+      workingHours,
+      workingDays,
+      vacancies,
+      description,
+      aboutRole,
+      responsibilities,
+      requirements,
+      keySkills,
+      offer,
+      tags,
+      package: jobPackage,
+    } = req.body;
+
+    const updatedJob = await Job.findByIdAndUpdate(
+      id,
+      {
+        title,
+        location,
+        jobType,
+        experience,
+        postedOn,
+        workingHours,
+        workingDays,
+        vacancies,
+        description,
+        aboutRole,
+        responsibilities,
+        requirements,
+        keySkills,
+        offer,
+        tags,
+        package: jobPackage,
+      },
+      {
+        new: true,        // return updated document
+        runValidators: true,
+      }
+    );
+
+    if (!updatedJob) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Job updated successfully",
+      data: updatedJob,
+    });
+
+  } catch (error) {
+    console.error("Update Job Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update job",
+      error: error.message,
+    });
+  }
+};
+
