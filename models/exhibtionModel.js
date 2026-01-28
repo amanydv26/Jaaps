@@ -31,6 +31,10 @@ const exhibitionSchema = new mongoose.Schema(
       type: String, // uploaded after completion
       default: null,
     },
+    popupActive: {
+  type: Boolean,
+  default: false,
+},
 
     status: {
       type: String,

@@ -7,6 +7,7 @@ const {
   getAllExhibitions,
   completeExhibition,
   deleteExhibition,
+  setPopupActive,
   updateExhibition // ✅ MISSING IMPORT (IMPORTANT)
 } = require("../controllers/exhibition");
 
@@ -34,5 +35,6 @@ router.put(
 );
 
 router.delete("/:id", deleteExhibition);
+router.patch("/exhibition/:id/popup", setPopupActive);
 
 module.exports = router;

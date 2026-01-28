@@ -260,3 +260,42 @@ exports.deleteExhibition = async (req, res) => {
     });
   }
 };
+
+
+// MAKE EXHIBITION POPUP ACTIVE
+exports.setPopupActive = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1️⃣ Deactivate any existing active popup
+    await Exhibition.updateMany(
+      { popupActive: true },
+      { popupActive: false }
+    );
+
+    // 2️⃣ Activate selected exhibition
+    const exhibition = await Exhibition.findByIdAndUpdate(
+      id,
+      { popupActive: true },
+      { new: true }
+    );
+
+    if (!exhibition) {
+      return res.status(404).json({
+        success: false,
+        message: "Exhibition not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Popup activated successfully",
+      data: exhibition,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
