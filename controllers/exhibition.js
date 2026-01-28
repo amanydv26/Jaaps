@@ -103,12 +103,7 @@ exports.updateExhibition = async (req, res) => {
     }
 
     // (Optional but recommended) Allow edit only if completed
-    if (exhibition.status !== "completed") {
-      return res.status(400).json({
-        success: false,
-        message: "Only completed exhibitions can be edited",
-      });
-    }
+   
 
     let updatedData = {
       eventName,
@@ -146,6 +141,97 @@ exports.updateExhibition = async (req, res) => {
     });
   }
 };
+// exports.updateExhibition = async (req, res) => {
+//   console.log("🔵 [STEP 1] Update Exhibition API called");
+
+//   try {
+//     const { id } = req.params;
+//     console.log("🟢 [STEP 2] Exhibition ID:", id);
+
+//     const { eventName, locality, address, date } = req.body;
+//     console.log("🟢 [STEP 3] Request Body:", {
+//       eventName,
+//       locality,
+//       address,
+//       date,
+//     });
+
+//     console.log("🟢 [STEP 4] Checking uploaded file...");
+//     console.log("📁 req.file:", req.file ? "File received" : "No file");
+
+//     const exhibition = await Exhibition.findById(id);
+//     console.log("🟢 [STEP 5] Exhibition fetched from DB:", exhibition);
+
+//     if (!exhibition) {
+//       console.log("🔴 [ERROR] Exhibition not found");
+//       return res.status(404).json({
+//         success: false,
+//         message: "Exhibition not found",
+//       });
+//     }
+
+//     console.log("🟢 [STEP 6] Exhibition status:", exhibition.status);
+
+  
+//     let updatedData = {};
+//     console.log("🟢 [STEP 7] Building update payload");
+
+//     if (eventName) updatedData.eventName = eventName;
+//     if (locality) updatedData.locality = locality;
+//     if (address) updatedData.address = address;
+//     if (date) updatedData.date = date;
+
+//     console.log("🟢 [STEP 8] Text fields prepared:", updatedData);
+
+//     if (req.file) {
+//       console.log("🟡 [STEP 9] New image detected, uploading to Cloudinary");
+
+//       try {
+//         const imageResult = await uploadToCloudinary(
+//           req.file.buffer,
+//           "exhibitions/updated"
+//         );
+
+//         console.log("🟢 [STEP 10] Image uploaded successfully:", imageResult.secure_url);
+
+//         updatedData.secondImage = imageResult.secure_url;
+//       } catch (uploadError) {
+//         console.error("🔴 [ERROR] Cloudinary upload failed:", uploadError);
+//         return res.status(500).json({
+//           success: false,
+//           message: "Image upload failed",
+//         });
+//       }
+//     } else {
+//       console.log("🟢 [STEP 9] No image provided, skipping upload");
+//     }
+
+//     console.log("🟢 [STEP 11] Final update payload:", updatedData);
+
+//     const updatedExhibition = await Exhibition.findByIdAndUpdate(
+//       id,
+//       updatedData,
+//       { new: true }
+//     );
+
+//     console.log("🟢 [STEP 12] Exhibition updated in DB:", updatedExhibition);
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Exhibition updated successfully",
+//       data: updatedExhibition,
+//     });
+
+//     console.log("✅ [STEP 13] Update API completed successfully");
+//   } catch (error) {
+//     console.error("🔥 [FATAL ERROR] Update Exhibition failed:", error);
+
+//     res.status(500).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
 
 
 
