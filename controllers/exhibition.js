@@ -42,7 +42,7 @@ exports.getAllExhibitions = async (req, res) => {
     ? { status: req.query.status }
     : {};
 
-  const exhibitions = await Exhibition.find(filter).sort({ date: -1 });
+  const exhibitions = await Exhibition.find(filter).sort({ createdAt: -1 });
 
   res.json({ success: true, data: exhibitions });
 };
@@ -112,16 +112,19 @@ exports.updateExhibition = async (req, res) => {
       date,
     };
 
-    // If image is sent, replace first image
+    // If image is sent on the basis of status
     if (req.file) {
       const imageResult = await uploadToCloudinary(
         req.file.buffer,
         "exhibitions/updated"
       );
 
-      updatedData.secondImage = imageResult.secure_url;
+      if (exhibition.status === 'upcoming') {
+        updatedData.firstImage = imageResult.secure_url;
+      } else if (exhibition.status === 'completed') {
+        updatedData.secondImage = imageResult.secure_url;
+      }
     }
-
     const updatedExhibition = await Exhibition.findByIdAndUpdate(
       id,
       updatedData,

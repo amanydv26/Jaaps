@@ -312,10 +312,13 @@ exports.updateUserCataloguePermissions = async (req, res) => {
 
     await user.save();
 
-    const updatedUser = await User.findById(userId).populate(
-      "catalogues.catalogueId"
-    );
-
+    const updatedUser = await User.findById(userId).populate({
+    path: "catalogues.catalogueId",
+    populate: {
+      path: "category",
+      model: "Category",
+    },
+  });
     return res.status(200).json({
       success: true,
       message: "Catalogue permissions updated successfully",
