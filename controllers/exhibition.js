@@ -42,7 +42,7 @@ exports.getAllExhibitions = async (req, res) => {
     ? { status: req.query.status }
     : {};
 
-  const exhibitions = await Exhibition.find(filter).sort({ createdAt: -1 });
+  const exhibitions = await Exhibition.find(filter).sort({ createdAt: 1 });
 
   res.json({ success: true, data: exhibitions });
 };

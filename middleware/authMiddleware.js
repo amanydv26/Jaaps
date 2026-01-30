@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-exports.authMiddleware = (req, res, next) => {
+const authMiddleware = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -12,12 +12,22 @@ exports.authMiddleware = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded; // { id, role }
-    next();
+    // 🔥 NORMALIZE USER ID
+    req.user = {
+      id: decoded.id || decoded._id || decoded.userId,
+      role: decoded.role,
+    };
 
+    if (!req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
+
+    next();
   } catch (error) {
     return res.status(401).json({
       success: false,
@@ -25,3 +35,4 @@ exports.authMiddleware = (req, res, next) => {
     });
   }
 };
+module.exports = authMiddleware;

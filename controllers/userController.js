@@ -144,6 +144,40 @@ exports.activateUser = async (req, res) => {
 };
 
 
+exports.getAllowedCatalogues = async (req, res) => {
+  console.log("🔥 getAllowedCatalogues HIT");
+
+  try {
+    const user = await User.findById(req.user.id).select("catalogues");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const allowedCatalogueIds = user.catalogues
+      .filter((item) => item.allowed === true)
+      .map((item) => item.catalogueId.toString());
+
+    console.log("✅ Allowed catalogue IDs:", allowedCatalogueIds);
+
+    return res.status(200).json({
+      success: true,
+      allowedCatalogueIds,
+    });
+  } catch (err) {
+    console.error("❌ getAllowedCatalogues error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+
 // exports.addUserCataloguesFromToken = async (req, res) => {
 //   try {
 //     const userId = req.user.id; // 🔑 FROM TOKEN
