@@ -3,6 +3,18 @@ const Image = require("../models/imageModel");
 const Product = require("../models/productModel");
 const streamifier = require("streamifier");
 
+
+
+const toCloudinarySafe = (value) => {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/\s+/g, "_")
+    .replace(/\./g, "_")
+    .replace(/[^a-z0-9_-]/g, "");
+};
+
 exports.uploadImagesFromFolder = async (req, res) => {
   try {
     const files = req.files;
@@ -21,7 +33,7 @@ exports.uploadImagesFromFolder = async (req, res) => {
 
     for (const file of files) {
       const filename = file.originalname;
-
+      
       let jaaps_no = filename.substring(0, filename.lastIndexOf("."));
       jaaps_no = jaaps_no.replace(/\s+/g, "/");
 
@@ -35,7 +47,7 @@ exports.uploadImagesFromFolder = async (req, res) => {
         });
         continue;
       }
-
+       console.log(`Processing ${filename} for JAAPS No: ${jaaps_no}`);
       // Extract category from product
     //  const category = product.category ? product.category.toLowerCase() : "uncategorized";
 
@@ -49,13 +61,17 @@ exports.uploadImagesFromFolder = async (req, res) => {
         });
         continue;
       }
+
+      const safeCategory = toCloudinarySafe(category);
+const safePublicId = toCloudinarySafe(jaaps_no);
+
         
       // Upload to Cloudinary with category folder + original filename
       const uploadResult = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
-            folder: `jaaps_products/${category}`,  
-            public_id:  jaaps_no, 
+            folder: `jaaps_products/${safeCategory}`,
+            public_id: safePublicId,
             use_filename: true,
             unique_filename: false,
             overwrite: true,
