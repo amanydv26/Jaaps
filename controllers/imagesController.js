@@ -52,15 +52,15 @@ exports.uploadImagesFromFolder = async (req, res) => {
     //  const category = product.category ? product.category.toLowerCase() : "uncategorized";
 
       // Check if image already exists
-      const existingImage = await Image.findOne({ jaaps_no });
+      // const existingImage = await Image.findOne({ jaaps_no });
 
-      if (existingImage) {
-        skipped.push({
-          jaaps_no,
-          reason: "Image already exists",
-        });
-        continue;
-      }
+      // if (existingImage) {
+      //   skipped.push({
+      //     jaaps_no,
+      //     reason: "Image already exists",
+      //   });
+      //   continue;
+      // }
 
       const safeCategory = toCloudinarySafe(category);
 const safePublicId = toCloudinarySafe(jaaps_no);

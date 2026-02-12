@@ -2,88 +2,88 @@ const Product = require("../models/productModel");
 const Category = require("../models/categoryModel");
 const XLSX = require("xlsx");
 
-exports.uploadProduct = async (req, res) => {
-  try {
-    const data = req.body;
-    console.log(data);
+// exports.uploadProduct = async (req, res) => {
+//   try {
+//     const data = req.body;
+//     console.log(data);
 
-    if (!data || !data.jaaps_no || !data.category) {
-      return res.status(400).json({
-        success: false,
-        message: "jaaps_no and category are required",
-      });
-    }
+//     if (!data || !data.jaaps_no || !data.category) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "jaaps_no and category are required",
+//       });
+//     }
 
-    const category = await Category.findOne({ name: data.category });
+//     const category = await Category.findOne({ name: data.category });
 
-    if (!category) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category name. Please create the category first.",
-      });
-    }
+//     if (!category) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid category name. Please create the category first.",
+//       });
+//     }
 
-    // normalize to arrays
-    const oemNos = Array.isArray(data.oem_no)
-      ? data.oem_no
-      : data.oem_no
-      ? [data.oem_no]
-      : [];
+//     // normalize to arrays
+//     const oemNos = Array.isArray(data.oem_no)
+//       ? data.oem_no
+//       : data.oem_no
+//       ? [data.oem_no]
+//       : [];
 
-    const descriptions = Array.isArray(data.description)
-      ? data.description
-      : data.description
-      ? [data.description]
-      : [];
+//     const descriptions = Array.isArray(data.description)
+//       ? data.description
+//       : data.description
+//       ? [data.description]
+//       : [];
 
-    const vehicles = Array.isArray(data.vehicle)
-      ? data.vehicle
-      : data.vehicle
-      ? [data.vehicle]
-      : [];
+//     const vehicles = Array.isArray(data.vehicle)
+//       ? data.vehicle
+//       : data.vehicle
+//       ? [data.vehicle]
+//       : [];
 
-    let product = await Product.findOne({ jaaps_no: data.jaaps_no });
+//     let product = await Product.findOne({ jaaps_no: data.jaaps_no });
 
-    if (product) {
-      if (oemNos.length) product.oem_no.push(...oemNos);
-      if (descriptions.length) product.description.push(...descriptions);
-      if (vehicles.length) product.vehicle.push(...vehicles);
+//     if (product) {
+//       if (oemNos.length) product.oem_no.push(...oemNos);
+//       if (descriptions.length) product.description.push(...descriptions);
+//       if (vehicles.length) product.vehicle.push(...vehicles);
 
-      product.category = category._id;
+//       product.category = category._id;
 
-      await product.save();
+//       await product.save();
 
-      return res.status(200).json({
-        success: true,
-        message: "Product updated with new information",
-        data: product,
-      });
-    }
+//       return res.status(200).json({
+//         success: true,
+//         message: "Product updated with new information",
+//         data: product,
+//       });
+//     }
 
-    const newProduct = new Product({
-      jaaps_no: data.jaaps_no,
-      oem_no: oemNos,
-      description: descriptions,
-      vehicle: vehicles,
-      category: category._id,
-    });
+//     const newProduct = new Product({
+//       jaaps_no: data.jaaps_no,
+//       oem_no: oemNos,
+//       description: descriptions,
+//       vehicle: vehicles,
+//       category: category._id,
+//     });
 
-    await newProduct.save();
+//     await newProduct.save();
 
-    return res.status(201).json({
-      success: true,
-      message: "New product created",
-      data: newProduct,
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to save product",
-      error: error.message,
-    });
-  }
-};
+//     return res.status(201).json({
+//       success: true,
+//       message: "New product created",
+//       data: newProduct,
+//     });
+//   } catch (error) {
+//     console.error("Error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to save product",
+//       error: error.message,
+//     });
+//   }
+// };
 
 // exports.uploadProduct = async (req, res) => {
 //   try {
@@ -155,6 +155,98 @@ exports.uploadProduct = async (req, res) => {
 //     });
 //   }
 // };
+exports.uploadProduct = async (req, res) => {
+  try {
+    console.log("========== UPDATE PRODUCT START ==========");
+
+    const data = req.body;
+    const file = req.file;
+
+    console.log("➡️ JAAPS No:", data.jaaps_no);
+    console.log("➡️ Body:", data);
+    console.log("➡️ File:", file ? file.originalname : "No file");
+
+    // =========================
+    // FIND PRODUCT BY JAAPS NO
+    // =========================
+    const product = await Product.findOne({ jaaps_no: data.jaaps_no });
+
+    if (!product) {
+      console.log("❌ Product not found for JAAPS:", data.jaaps_no);
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    console.log("✅ Product found:", product.jaaps_no);
+
+    // =========================
+    // CATEGORY UPDATE
+    // =========================
+    if (data.category) {
+      const category = await Category.findOne({ name: data.category });
+      if (category) {
+        product.category = category._id;
+        console.log("✅ Category updated");
+      }
+    }
+
+    // =========================
+    // TEXT UPDATE
+    // =========================
+    if (data.oem_no) {
+      const newOems = Array.isArray(data.oem_no)
+        ? data.oem_no
+        : [data.oem_no];
+
+      product.oem_no = [...new Set([...(product.oem_no || []), ...newOems])];
+    }
+
+    if (data.description) product.description = [data.description];
+    if (data.vehicle) product.vehicle = [data.vehicle];
+
+    // =========================
+    // IMAGE UPDATE (OPTIONAL)
+    // =========================
+    if (file) {
+      console.log("🖼 Uploading new image");
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "products" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        streamifier.createReadStream(file.buffer).pipe(stream);
+      });
+
+      product.image_url = uploadResult.secure_url;
+      console.log("✅ Image updated");
+    }
+
+    await product.save();
+
+    console.log("✅ Product saved");
+    console.log("========== UPDATE PRODUCT END ==========");
+
+    res.json({
+      success: true,
+      message: "Product updated successfully",
+      data: product,
+    });
+
+  } catch (err) {
+    console.error("❌ UPDATE ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Update failed",
+    });
+  }
+};
+
 
 exports.uploadBulkProducts = async (req, res) => {
   try {
